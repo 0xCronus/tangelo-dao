@@ -16,12 +16,12 @@ interface MetaDAOProfile {
 }
 
 const DAOProfile: React.FC<MetaDAOProfile> = ({
-  name = "Citrea",
-  description = "Today's organizations are captured by politics. They act according to what's good for those in power, not according to what's good for the organization. MetaDAO escapes this issue by using futarchy, a system where markets make decisions.",
+  name = "Tangelo DAO",
+  description = "Build Privacy-Focused DAOs for Inclusive Communities Launch DAOs where member identities stay private. Make proposals, vote anonymously, and connect through secure, token-gated voice and video chats.",
   proposals = 23,
-  twitter = "https://x.com/citrea_xyz",
-  github = "https://github.com/chainwayxyz/citrea",
-  website = "https://origins.citrea.xyz/",
+  twitter = "https://x.com/tangelodao",
+  github = "https://github.com/TangeloDao",
+  website = "https://tangelodao.xyz/",
 }) => {
   const { isConnected } = useAccount();
   const params = useParams();
@@ -58,7 +58,7 @@ const DAOProfile: React.FC<MetaDAOProfile> = ({
         ))}
         {isConnected && (
           <Link href={`/gov/${dao}/new`}>
-            <Button>Create New Proposal</Button>
+            <Button className="rounded-xl">Create New Proposal</Button>
           </Link>
         )}
       </div>

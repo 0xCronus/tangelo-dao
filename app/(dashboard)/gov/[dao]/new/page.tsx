@@ -11,25 +11,70 @@ import { useParams } from "next/navigation";
 const NewProposalForm = () => {
   const params = useParams();
   const dao = Array.isArray(params.dao) ? params.dao[0] : params.dao;
+
+  // Form state
   const [activeTab, setActiveTab] = useState("write");
+  const [title, setTitle] = useState("");
   const [markdownContent, setMarkdownContent] = useState("");
-  const { data: hash, writeContract } = useWriteContract();
+  const [targetAddress, setTargetAddress] = useState("");
+  const [calldata, setCalldata] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  // Contract interactions
+  const { writeContract } = useWriteContract();
+
+  const validateForm = () => {
+    if (!title.trim()) {
+      setError("Title is required");
+      return false;
+    }
+    if (!markdownContent.trim()) {
+      setError("Proposal content is required");
+      return false;
+    }
+    if (!targetAddress.trim() || !calldata.trim()) {
+      setError("Target address and calldata are required");
+      return false;
+    }
+    return true;
+  };
 
   const createProposal = async () => {
-    console.log("Creating proposal");
-    await writeContract({
-      address: "0x527Cfde7Aad99949642CaFBD9B324FFf7D2612c4",
-      abi: ABI,
-      functionName: "propose",
-      args: [
-        ["0xc01ae45F187080B9bb5AC2DDBBa256B9E5D80Cd7"],
-        [0],
-        [
-          "0x6cb16189000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000b7859f08d656c6e25d9ea0470860b28f7609e44100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001",
-        ],
-        "Proposal Title",
-      ],
-    });
+    try {
+      setLoading(true);
+      setError("");
+
+      if (!validateForm()) {
+        setLoading(false);
+        return;
+      }
+
+      const governorAddress = DAO_Addresses.tangelo;
+      if (!governorAddress) {
+        throw new Error("Invalid DAO address");
+      }
+
+      // Prepare proposal data
+      const targets = [targetAddress];
+      const values = [0]; // Using 0 ETH as default
+      const calldataArray = [calldata];
+      const description = `# ${title}\n\n${markdownContent}`;
+
+      await writeContract({
+        address: governorAddress,
+        abi: ABI,
+        functionName: "propose",
+        args: [targets, values, calldataArray, description],
+      });
+
+      setSuccess(true);
+    } catch (err) {
+      setError(err.message || "Failed to create proposal");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -48,7 +93,9 @@ const NewProposalForm = () => {
                 </label>
                 <input
                   type="text"
-                  placeholder="Title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter proposal title"
                   className="w-full bg-gray-950 border rounded-xl p-3 focus:outline-none focus:border-gray-600"
                 />
               </div>
@@ -90,13 +137,21 @@ const NewProposalForm = () => {
                       className="w-full h-48 bg-gray-950 border border-gray-800 rounded-xl p-3 focus:outline-none focus:border-gray-600"
                     />
                   ) : (
-                    <Markdown className="mt-4 min-h-48 border rounded-xl p-3 bg-gray-950">
-                      {markdownContent}
-                    </Markdown>
+                    <div className="mt-4 min-h-48 border rounded-xl p-3 bg-gray-950 prose prose-invert max-w-none">
+                      <Markdown>{markdownContent}</Markdown>
+                    </div>
                   )}
                 </div>
               </div>
-              <Button onClick={createProposal} className="rounded-xl">Create Proposal</Button>
+              <Button
+                onClick={createProposal}
+                disabled={loading}
+                className="rounded-xl w-full"
+              >
+                {loading
+                  ? "Creating Proposal..."
+                  : "Create Proposal"}
+              </Button>
             </div>
           </div>
 
@@ -136,14 +191,24 @@ const NewProposalForm = () => {
                   <label className="block text-sm text-gray-400 uppercase mb-2">
                     Target address
                   </label>
-                  <input className="w-full  bg-gray-950 border rounded-xl p-3 focus:outline-none focus:border-gray-600" />
+                  <input
+                    value={targetAddress}
+                    onChange={(e) => setTargetAddress(e.target.value)}
+                    placeholder="0x..."
+                    className="w-full bg-gray-950 border rounded-xl p-3 focus:outline-none focus:border-gray-600"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm text-gray-400 uppercase mb-2">
                     Calldata
                   </label>
-                  <textarea className="w-full h-24 bg-gray-950 border rounded-xl p-3 focus:outline-none focus:border-gray-600" />
+                  <textarea
+                    value={calldata}
+                    onChange={(e) => setCalldata(e.target.value)}
+                    placeholder="0x..."
+                    className="w-full h-24 bg-gray-950 border rounded-xl p-3 focus:outline-none focus:border-gray-600"
+                  />
                 </div>
 
                 <label className="block text-sm text-gray-400 uppercase mb-2">
