@@ -1,18 +1,17 @@
 import React from "react";
-import { ArrowUpRight, Github, Globe, Twitter } from "lucide-react";
+import {  Github, Globe, Twitter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAccount } from "wagmi";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
 interface MetaDAOProfile {
-  price: number;
+  name: string;
   description: string;
   proposals: number;
-  passThreshold: number;
-  totalVolume: number;
-  traders: number;
-  trades: number;
+  twitter: string;
+  github: string;
+  website: string;
 }
 
 const DAOProfile: React.FC<MetaDAOProfile> = ({
@@ -30,13 +29,6 @@ const DAOProfile: React.FC<MetaDAOProfile> = ({
     <div className="max-w-md bg-black text-white p-6 rounded-lg">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <div className="relative">
-          <div className="w-16 h-16 rounded-full bg-black border-2 border-neutral-800">
-            <div className="w-10 h-10 rounded-full bg-red-400 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <ArrowUpRight className="w-6 h-6 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-black" />
-            </div>
-          </div>
-        </div>
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             {name}

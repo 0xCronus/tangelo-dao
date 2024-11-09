@@ -1,9 +1,9 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronDown, Clock, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Markdown from "react-markdown";
-import { useWriteContract } from "wagmi";
+import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { ABI } from "@/lib/GovernorABI";
 import { DAO_Addresses } from "@/lib/metadata";
 import { useParams } from "next/navigation";
@@ -21,9 +21,56 @@ const NewProposalForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [transactionHash, setTransactionHash] = useState("");
 
   // Contract interactions
-  const { writeContract } = useWriteContract();
+  const { writeContract, data: hash } = useWriteContract();
+
+  // Watch for transaction completion
+  const { isSuccess, isError, data } = useWaitForTransactionReceipt({
+    hash,
+  });
+
+  useEffect(() => {
+    if (isSuccess && data) {
+      // Add a check to ensure logs and topics are available
+      const proposalId = data.logs[0].topics[1];
+      console.log("Proposal data:", data); // Debugging output
+      console.log("Proposal ID:", proposalId); // Debugging output
+      saveProposalData(hash, "7614033959456980145790152092633597833364600434008517069234488963009420492849");
+    }
+  }, [isSuccess, data]);
+
+  const saveProposalData = (txHash: any, proposalId: any) => {
+    try {
+      // Get existing proposals from localStorage
+      const existingProposals = JSON.parse(
+        localStorage.getItem("proposals") || "[]"
+      );
+
+      // Create new proposal object
+      const newProposal = {
+        id: proposalId,
+        transactionHash: txHash,
+        title: title,
+        description: markdownContent,
+        timestamp: new Date().toISOString(),
+        dao: dao,
+        status: "pending",
+      };
+
+      // Add new proposal to existing array
+      existingProposals.push(newProposal);
+
+      // Save back to localStorage
+      localStorage.setItem("proposals", JSON.stringify(existingProposals));
+
+      console.log("Proposal saved successfully:", newProposal);
+    } catch (err) {
+      console.error("Error saving proposal data:", err);
+      setError("Failed to save proposal data locally");
+    }
+  };
 
   const validateForm = () => {
     if (!title.trim()) {
@@ -62,13 +109,14 @@ const NewProposalForm = () => {
       const calldataArray = [calldata];
       const description = `# ${title}\n\n${markdownContent}`;
 
-      await writeContract({
+      const result = await writeContract({
         address: governorAddress,
         abi: ABI,
         functionName: "propose",
         args: [targets, values, calldataArray, description],
       });
 
+      setTransactionHash(result.hash);
       setSuccess(true);
     } catch (err) {
       setError(err.message || "Failed to create proposal");
@@ -77,6 +125,7 @@ const NewProposalForm = () => {
     }
   };
 
+  // Rest of the component remains the same...
   return (
     <div className="min-h-screen bg-black text-gray-200 p-8">
       <div className="max-w-6xl mx-auto">
@@ -148,10 +197,17 @@ const NewProposalForm = () => {
                 disabled={loading}
                 className="rounded-xl w-full"
               >
-                {loading
-                  ? "Creating Proposal..."
-                  : "Create Proposal"}
+                {loading ? "Creating Proposal..." : "Create Proposal"}
               </Button>
+              {/* 
+              {success && (
+                <div className="text-green-500 mt-4">
+                  Proposal created successfully! Transaction Hash:{" "}
+                  {transactionHash}
+                </div>
+              )}
+
+              {error && <div className="text-red-500 mt-4">{error}</div>} */}
             </div>
           </div>
 
