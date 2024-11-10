@@ -1,14 +1,14 @@
 import { http, createConfig } from 'wagmi'
-import { sepolia } from 'wagmi/chains'
+import { bscTestnet } from 'wagmi/chains'
 import { getDefaultConfig } from "connectkit";
 
 export const config = createConfig(
   getDefaultConfig({
     // Your dApps chains
-    chains: [ sepolia],
+    chains: [ bscTestnet],
     
     transports: {
-      [sepolia.id]: http(),
+      [bscTestnet.id]: http(),
     },
 
     walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
