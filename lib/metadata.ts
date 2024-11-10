@@ -1,6 +1,5 @@
 type OxString = `0x${string}`;
 
 export const DAO_Addresses: { [key: string]: OxString } = {
-    "citrea": "0x",
-    "tangelo": "0x527Cfde7Aad99949642CaFBD9B324FFf7D2612c4",
+    "tangelo": "0x789bcfCB93F09c63D08289847F10Bc7d1A720a0f",
 };
