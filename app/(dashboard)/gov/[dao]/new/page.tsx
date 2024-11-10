@@ -8,48 +8,60 @@ import { ABI } from "@/lib/GovernorABI";
 import { DAO_Addresses } from "@/lib/metadata";
 import { useParams } from "next/navigation";
 
-const NewProposalForm = () => {
+// Type definitions
+type TabType = "write" | "preview";
+
+interface ProposalData {
+  id: string;
+  transactionHash: string;
+  title: string;
+  description: string;
+  timestamp: string;
+  dao: string;
+  status: "pending" | "active" | "succeeded" | "defeated" | "executed";
+}
+const NewProposalForm: React.FC = () => {
   const params = useParams();
   const dao = Array.isArray(params.dao) ? params.dao[0] : params.dao;
 
   // Form state
-  const [activeTab, setActiveTab] = useState("write");
-  const [title, setTitle] = useState("");
-  const [markdownContent, setMarkdownContent] = useState("");
-  const [targetAddress, setTargetAddress] = useState("");
-  const [calldata, setCalldata] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
-  const [transactionHash, setTransactionHash] = useState("");
+  const [activeTab, setActiveTab] = useState<TabType>("write");
+  const [title, setTitle] = useState<string>("");
+  const [markdownContent, setMarkdownContent] = useState<string>("");
+  const [targetAddress, setTargetAddress] = useState<string>("");
+  const [calldata, setCalldata] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
   // Contract interactions
   const { writeContract, data: hash } = useWriteContract();
 
   // Watch for transaction completion
-  const { isSuccess, isError, data } = useWaitForTransactionReceipt({
+  const { isSuccess, data } = useWaitForTransactionReceipt({
     hash,
   });
 
   useEffect(() => {
     if (isSuccess && data) {
-      // Add a check to ensure logs and topics are available
-      const proposalId = data.logs[0].topics[1];
-      console.log("Proposal data:", data); // Debugging output
-      console.log("Proposal ID:", proposalId); // Debugging output
-      saveProposalData(hash, "7614033959456980145790152092633597833364600434008517069234488963009420492849");
+      const proposalId = data.logs[0]?.topics[1];
+      console.log("Proposal data:", data);
+      console.log("Proposal ID:", proposalId);
+      saveProposalData(
+        hash!,
+        "7614033959456980145790152092633597833364600434008517069234488963009420492849"
+      );
     }
-  }, [isSuccess, data]);
+  }, [isSuccess, data, hash]);
 
-  const saveProposalData = (txHash: any, proposalId: any) => {
+  const saveProposalData = (
+    txHash: `0x${string}`,
+    proposalId: string
+  ): void => {
     try {
-      // Get existing proposals from localStorage
-      const existingProposals = JSON.parse(
+      const existingProposals: ProposalData[] = JSON.parse(
         localStorage.getItem("proposals") || "[]"
       );
 
-      // Create new proposal object
-      const newProposal = {
+      const newProposal: ProposalData = {
         id: proposalId,
         transactionHash: txHash,
         title: title,
@@ -59,73 +71,61 @@ const NewProposalForm = () => {
         status: "pending",
       };
 
-      // Add new proposal to existing array
       existingProposals.push(newProposal);
-
-      // Save back to localStorage
       localStorage.setItem("proposals", JSON.stringify(existingProposals));
 
       console.log("Proposal saved successfully:", newProposal);
     } catch (err) {
       console.error("Error saving proposal data:", err);
-      setError("Failed to save proposal data locally");
     }
   };
 
-  const validateForm = () => {
+  const validateForm = (): boolean => {
     if (!title.trim()) {
-      setError("Title is required");
       return false;
     }
     if (!markdownContent.trim()) {
-      setError("Proposal content is required");
       return false;
     }
     if (!targetAddress.trim() || !calldata.trim()) {
-      setError("Target address and calldata are required");
       return false;
     }
     return true;
   };
 
-  const createProposal = async () => {
+  const createProposal = async (): Promise<void> => {
     try {
       setLoading(true);
-      setError("");
 
       if (!validateForm()) {
         setLoading(false);
         return;
       }
 
-      const governorAddress = DAO_Addresses.tangelo;
+      const governorAddress = DAO_Addresses.tangelo as `0x${string}`;
       if (!governorAddress) {
         throw new Error("Invalid DAO address");
       }
 
       // Prepare proposal data
-      const targets = [targetAddress];
-      const values = [0]; // Using 0 ETH as default
-      const calldataArray = [calldata];
+      const targets: `0x${string}`[] = [targetAddress as `0x${string}`];
+      const values: bigint[] = [BigInt(0)]; // Using 0 ETH as default
+      const calldataArray: `0x${string}`[] = [calldata as `0x${string}`];
       const description = `# ${title}\n\n${markdownContent}`;
 
-      const result = await writeContract({
+      await writeContract({
         address: governorAddress,
         abi: ABI,
         functionName: "propose",
         args: [targets, values, calldataArray, description],
       });
-
-      setTransactionHash(result.hash);
-      setSuccess(true);
-    } catch (err) {
-      setError(err.message || "Failed to create proposal");
+    } catch (err: unknown) {
+      console.error("Error creating proposal:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Rest of the component remains the same...
   return (
     <div className="min-h-screen bg-black text-gray-200 p-8">
       <div className="max-w-6xl mx-auto">
@@ -143,7 +143,9 @@ const NewProposalForm = () => {
                 <input
                   type="text"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setTitle(e.target.value)
+                  }
                   placeholder="Enter proposal title"
                   className="w-full bg-gray-950 border rounded-xl p-3 focus:outline-none focus:border-gray-600"
                 />
@@ -181,7 +183,9 @@ const NewProposalForm = () => {
                   {activeTab === "write" ? (
                     <textarea
                       value={markdownContent}
-                      onChange={(e) => setMarkdownContent(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                        setMarkdownContent(e.target.value)
+                      }
                       placeholder="Use markdown to format your proposal content"
                       className="w-full h-48 bg-gray-950 border border-gray-800 rounded-xl p-3 focus:outline-none focus:border-gray-600"
                     />
@@ -199,15 +203,6 @@ const NewProposalForm = () => {
               >
                 {loading ? "Creating Proposal..." : "Create Proposal"}
               </Button>
-              {/* 
-              {success && (
-                <div className="text-green-500 mt-4">
-                  Proposal created successfully! Transaction Hash:{" "}
-                  {transactionHash}
-                </div>
-              )}
-
-              {error && <div className="text-red-500 mt-4">{error}</div>} */}
             </div>
           </div>
 
@@ -249,7 +244,9 @@ const NewProposalForm = () => {
                   </label>
                   <input
                     value={targetAddress}
-                    onChange={(e) => setTargetAddress(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setTargetAddress(e.target.value)
+                    }
                     placeholder="0x..."
                     className="w-full bg-gray-950 border rounded-xl p-3 focus:outline-none focus:border-gray-600"
                   />
@@ -261,7 +258,9 @@ const NewProposalForm = () => {
                   </label>
                   <textarea
                     value={calldata}
-                    onChange={(e) => setCalldata(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                      setCalldata(e.target.value)
+                    }
                     placeholder="0x..."
                     className="w-full h-24 bg-gray-950 border rounded-xl p-3 focus:outline-none focus:border-gray-600"
                   />

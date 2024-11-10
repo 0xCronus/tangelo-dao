@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Clock } from "lucide-react";
-import { useParams } from "next/navigation";
 
 interface ProposalCardProps {
   id : string;
@@ -18,7 +17,6 @@ const ProposalCard: React.FC<ProposalCardProps> = ({
   timestamp,
   title,
   dao,
-  index,
 }) => {
   // Function to calculate time ago
   const calculateTimeAgo = (timestamp: string) => {
@@ -84,8 +82,6 @@ const DaoProposalsDashboard = () => {
   }
   
   const [proposals, setProposals] = useState<Proposal[]>([]);
-  const params = useParams();
-  const dao = Array.isArray(params.dao) ? params.dao[0] : params.dao;
 
   useEffect(() => {
     // Retrieve proposals from localStorage

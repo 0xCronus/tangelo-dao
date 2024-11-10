@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { XCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,32 +11,48 @@ import { ABI } from "@/lib/GovernorABI";
 import { DAO_Addresses } from "@/lib/metadata";
 import Markdown from "react-markdown";
 
-const DaoProposalView = () => {
-  const { id } = useParams();
-  const [proposalData, setProposalData] = useState(null);
-  const [isVoteDialogOpen, setIsVoteDialogOpen] = useState(false);
-  const [selectedVote, setSelectedVote] = useState<string | undefined>(undefined);
-  const [isVoting, setIsVoting] = useState(false);
+// Define types for the proposal data
+interface ProposalData {
+  id: string;
+  transactionHash: string;
+  title: string;
+  description: string;
+  timestamp: number;
+  status: string;
+  dao: string;
+}
+
+// Define type for vote options
+type VoteOption = "for" | "against" | "abstain" | undefined;
+
+const DaoProposalView: React.FC = () => {
+  // Type params explicitly
+  const { id } = useParams<{ id: string }>();
+  const [proposalData, setProposalData] = useState<ProposalData | null>(null);
+  const [isVoteDialogOpen, setIsVoteDialogOpen] = useState<boolean>(false);
+  const [selectedVote, setSelectedVote] = useState<VoteOption>(undefined);
+  const [isVoting, setIsVoting] = useState<boolean>(false);
+
+  // Type the writeContract hook
+  const { writeContract } = useWriteContract();
 
   // Fetch proposal details from localStorage based on proposal ID
   useEffect(() => {
-    const proposals = JSON.parse(localStorage.getItem("proposals") || "[]");
+    const proposals: ProposalData[] = JSON.parse(localStorage.getItem("proposals") || "[]");
     const proposal = proposals.find((p) => p.transactionHash === id);
     setProposalData(proposal || null);
   }, [id]);
 
-  const { writeContract } = useWriteContract();
-
-  const handleVoteSubmit = async () => {
-    if (!selectedVote) return;
+  const handleVoteSubmit = async (): Promise<void> => {
+    if (!selectedVote || !proposalData) return;
 
     setIsVoting(true);
     try {
       await writeContract({
-        address: DAO_Addresses.tangelo,
+        address: DAO_Addresses.tangelo as `0x${string}`, // Type assertion for hex address
         abi: ABI,
         functionName: "castVote",
-        args: [proposalData?.id!, selectedVote === "for" ? 0 : 1],
+        args: [proposalData.id, selectedVote === "for" ? 0 : 1],
       });
 
       setIsVoteDialogOpen(false);
@@ -61,9 +76,6 @@ const DaoProposalView = () => {
           <Card className="bg-gray-950 border rounded-xl p-6">
             <div className="relative">
               <div className="absolute top-0 left-0 right-0 h-1 bg-orange-500" />
-              {/* <div className="absolute top-[-12px] left-1/2 transform -translate-x-1/2">
-                <XCircle className="w-8 h-8 text-pink-500 bg-black rounded-full" />
-              </div> */}
             </div>
 
             <div className="mt-8 space-y-6">
@@ -124,7 +136,7 @@ const DaoProposalView = () => {
           </DialogHeader>
 
           <div className="space-y-6 py-4">
-            <RadioGroup value={selectedVote} onValueChange={setSelectedVote}>
+            <RadioGroup value={selectedVote} onValueChange={(value: string) => setSelectedVote(value as VoteOption)}>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="for" id="for" />
                 <Label htmlFor="for" className="text-white">For</Label>
