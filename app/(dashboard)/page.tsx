@@ -24,19 +24,19 @@ export default function Home() {
               />
             </div>
             <div className="text-sm opacity-75">
-              Build Privacy-Focused DAOs for Inclusive BTC Communities
+              Build Privacy-Focused DAOs for Inclusive Communities
             </div>
           </div>
         </Link>
         <Link href="/">
           <div className="bg-zinc-950 border border-gray-400 rounded-xl p-4">
-            <div className="text-lg font-bold">Citrea Origins (soon...)</div>
+            <div className="text-lg font-bold">New Dao (soon...)</div>
             <div className="flex items-center justify-center">
               <Citrea className="fill-current text-[#d4ff00] h-60 w-60" />
             </div>
             <div className="text-sm opacity-75">
               Uniting elite developers to build applications that will pave the
-              adoption path for a Bitcoin-backed economy.
+              adoption path for a onChain economy.
             </div>
           </div>
         </Link>
