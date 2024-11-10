@@ -1,179 +1,99 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Clock } from "lucide-react";
 import { useParams } from "next/navigation";
 
 interface ProposalCardProps {
+  id : string;
   status: string;
-  timeAgo: string;
+  timestamp: string;
   title: string;
   dao: string;
   index: number;
 }
 
 const ProposalCard: React.FC<ProposalCardProps> = ({
+  id,
   status,
-  timeAgo,
+  timestamp,
   title,
   dao,
   index,
-}) => (
-  <div className="bg-gray-950 border rounded-xl p-6 mb-4">
-    <a href={`/gov/${dao}/proposal/${index}`}>
-      <div className="flex items-center gap-4 mb-4">
-        <div
-          className={`w-10 h-10 rounded-xl flex items-center justify-center
-        ${status === "ended" ? "bg-pink-400" : "bg-green-400"}`}
-        >
-          {status === "ended" ? "✕" : "✓"}
-        </div>
-        <div className="flex items-center text-gray-400">
-          <Clock className="w-4 h-4 mr-2" />
-          <span>Ended {timeAgo}</span>
-        </div>
-        {/* {tags.map((tag, index) => (
-        <span
-          key={index}
-          className={`px-3 py-1 rounded-full text-sm
-            ${
-              tag === "Treasury"
-                ? "bg-green-900 text-green-400"
-                : tag === "Dao"
-                ? "bg-pink-900 text-pink-400"
-                : tag === "Governance"
-                ? "bg-yellow-900 text-yellow-400"
-                : ""
-            }`}
-        >
-          {tag}
-        </span>
-      ))} */}
-      </div>
+}) => {
+  // Function to calculate time ago
+  const calculateTimeAgo = (timestamp: string) => {
+    const currentTime = new Date();
+    const proposalTime = new Date(timestamp);
+    const diffInSeconds = Math.floor(
+      (currentTime.getTime() - proposalTime.getTime()) / 1000
+    );
 
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold text-white mb-2">{title}</h2>
-        <div className="flex gap-2 text-gray-400">
-          <span>Read proposal</span>
-          {/* <span>•</span>
-        <span>View Market</span> */}
-        </div>
-      </div>
+    const days = Math.floor(diffInSeconds / (3600 * 24));
+    if (days > 0) {
+      return `${days} day${days !== 1 ? "s" : ""} ago`;
+    }
+    const hours = Math.floor(diffInSeconds / 3600);
+    if (hours > 0) {
+      return `${hours} hour${hours !== 1 ? "s" : ""} ago`;
+    }
+    const minutes = Math.floor(diffInSeconds / 60);
+    if (minutes > 0) {
+      return `${minutes} minute${minutes !== 1 ? "s" : ""} ago`;
+    }
+    return "Just now";
+  };
 
-      {/* <div className="flex items-center justify-between">
-      <div className="flex items-center">
-        <div className="flex -space-x-2">
-          {Array(6)
-            .fill(0)
-            .map((_, i) => (
-              <div
-                key={i}
-                className={`w-8 h-8 rounded-full border-2 border-gray-900
-                ${
-                  i % 3 === 0
-                    ? "bg-pink-400"
-                    : i % 3 === 1
-                    ? "bg-blue-400"
-                    : "bg-orange-400"
-                }`}
-              />
-            ))}
-          {votes > 0 && (
-            <div className="w-8 h-8 rounded-full bg-blue-500 border-2 border-gray-900 flex items-center justify-center text-white text-sm">
-              +{votes}
-            </div>
-          )}
-        </div>
-        <div className="flex items-center ml-4 gap-4">
-          <div className="flex items-center gap-1">
-            <ThumbsUp className="w-4 h-4" />
-            <span>{likes}</span>
+  const timeAgo = calculateTimeAgo(timestamp);
+
+  return (
+    <div className="bg-gray-950 border rounded-xl p-6 mb-4">
+      <a href={`/gov/${dao}/proposal/${id}`}>
+        <div className="flex items-center gap-4 mb-4">
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center
+            ${status === "pending" ? "bg-orange-400" : "bg-green-400"}`}
+          >
+            {status === "pending" ? "!" : "✓"}
           </div>
-          <div className="flex items-center gap-1">
-            <Flame className="w-4 h-4" />
-            <span>{fires}</span>
+          <div className="flex items-center text-gray-400">
+            <Clock className="w-4 h-4 mr-2" />
+            <span>
+              {status === "ended" ? `Ended ${timeAgo}` : `Created ${timeAgo}`}
+            </span>
           </div>
         </div>
-      </div>
-      <div className="flex flex-col gap-2">
-        <span className="text-green-400">${greenAmount}</span>
-        <span className="text-pink-400">${pinkAmount}</span>
-      </div>
-    </div> */}
-    </a>
-  </div>
-);
+
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold text-white mb-2">{title}</h2>
+          <div className="flex gap-2 text-gray-400">
+            <span>Read proposal</span>
+          </div>
+        </div>
+      </a>
+    </div>
+  );
+};
 
 const DaoProposalsDashboard = () => {
+  interface Proposal {
+    transactionHash: string;
+    dao: string;
+    status: string;
+    timestamp: string;
+    title: string;
+  }
+  
+  const [proposals, setProposals] = useState<Proposal[]>([]);
   const params = useParams();
   const dao = Array.isArray(params.dao) ? params.dao[0] : params.dao;
-  const proposals = [
-    {
-      status: "ended",
-      timeAgo: "4 days ago",
-      title: "Swap 150,000 USDC into ISC?",
-      tags: ["Treasury"],
-      votes: 46,
-      likes: 6,
-      fires: 0,
-      greenAmount: "2,809.13",
-      pinkAmount: "2,750.06",
-    },
-    {
-      status: "active",
-      timeAgo: "12 days ago",
-      title: "Hire Advaith Sekharan as Founding Engineer?",
-      tags: ["Dao", "Treasury"],
-      votes: 15,
-      likes: 1,
-      fires: 1,
-      greenAmount: "3,459.84",
-      pinkAmount: "2,898.86",
-    },
-    {
-      status: "ended",
-      timeAgo: "4 days ago",
-      title: "Swap 150,000 USDC into ISC?",
-      tags: ["Treasury"],
-      votes: 46,
-      likes: 6,
-      fires: 0,
-      greenAmount: "2,809.13",
-      pinkAmount: "2,750.06",
-    },
-    {
-      status: "ended",
-      timeAgo: "12 days ago",
-      title: "Hire Advaith Sekharan as Founding Engineer?",
-      tags: ["Dao", "Treasury"],
-      votes: 15,
-      likes: 1,
-      fires: 1,
-      greenAmount: "3,459.84",
-      pinkAmount: "2,898.86",
-    },
-    {
-      status: "ended",
-      timeAgo: "4 days ago",
-      title: "Swap 150,000 USDC into ISC?",
-      tags: ["Treasury"],
-      votes: 46,
-      likes: 6,
-      fires: 0,
-      greenAmount: "2,809.13",
-      pinkAmount: "2,750.06",
-    },
-    {
-      status: "ended",
-      timeAgo: "12 days ago",
-      title: "Hire Advaith Sekharan as Founding Engineer?",
-      tags: ["Dao", "Treasury"],
-      votes: 15,
-      likes: 1,
-      fires: 1,
-      greenAmount: "3,459.84",
-      pinkAmount: "2,898.86",
-    },
-  ];
+
+  useEffect(() => {
+    // Retrieve proposals from localStorage
+    const storedProposals = localStorage.getItem("proposals");
+    if (storedProposals) {
+      setProposals(JSON.parse(storedProposals));
+    }
+  }, []);
 
   return (
     <div className="bg-black min-h-screen p-8">
@@ -183,9 +103,21 @@ const DaoProposalsDashboard = () => {
         </div>
 
         <div className="space-y-4">
-          {proposals.map((proposal, index) => (
-            <ProposalCard key={index} {...proposal} index={index} dao={dao} />
-          ))}
+          {proposals.length > 0 ? (
+            proposals.map((proposal, index) => (
+              <ProposalCard
+                key={index}
+                index={index}
+                dao={proposal.dao}
+                status={proposal.status}
+                timestamp={proposal.timestamp}
+                title={proposal.title}
+                id={proposal.transactionHash}
+              />
+            ))
+          ) : (
+            <p className="text-gray-400">No proposals found.</p>
+          )}
         </div>
       </div>
     </div>

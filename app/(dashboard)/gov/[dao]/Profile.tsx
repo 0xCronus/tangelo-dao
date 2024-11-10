@@ -17,7 +17,7 @@ interface MetaDAOProfile {
 const DAOProfile: React.FC<MetaDAOProfile> = ({
   name = "Tangelo DAO",
   description = "Build Privacy-Focused DAOs for Inclusive Communities Launch DAOs where member identities stay private. Make proposals, vote anonymously, and connect through secure, token-gated voice and video chats.",
-  proposals = 23,
+  proposals = 0,
   twitter = "https://x.com/tangelodao",
   github = "https://github.com/TangeloDao",
   website = "https://tangelodao.xyz/",
